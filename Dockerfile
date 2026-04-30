@@ -1,19 +1,36 @@
-# Build stage
-FROM golang:1.22-alpine AS builder
+# ---------- Build stage ----------
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
-COPY go.mod ./
+
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o app
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app ./cmd/server
 
-# Run stage
-FROM alpine:latest
+# ---------- Runtime stage ----------
+FROM alpine:3.19
 
-WORKDIR /root/
+# Install PostgreSQL in FINAL image (important)
+RUN apk add --no-cache \
+    postgresql \
+    postgresql-client \
+    su-exec \
+    bash
+
+# Setup Postgres directory
+RUN mkdir -p /var/lib/postgresql/data && \
+    chown -R postgres:postgres /var/lib/postgresql
+
+# Copy Go binary
+WORKDIR /app
 COPY --from=builder /app/app .
 
-EXPOSE 8080
+# Copy startup script
+COPY start.sh .
+RUN chmod +x start.sh
 
-CMD ["./app"]
+EXPOSE 5432 8080
+
+CMD ["./start.sh"]
