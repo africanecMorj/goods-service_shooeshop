@@ -35,7 +35,7 @@ func main() {
 		log.Fatal("DB ping error:", err)
 	}
 
-	log.Println("DB connected ✅")
+	log.Println("DB connected")
 
 	userRepo := &repository.UserRepo{DB: db}
 	tokenRepo := &repository.TokenRepo{DB: db}

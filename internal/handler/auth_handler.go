@@ -31,7 +31,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.S.Register(r.Context(), in.Email, in.Password); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Cannot make record into db", http.StatusInternalServerError)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Token string }
 	if err:=json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Bad ruquest", http.StatusBadRequest)
 	}
 		role := "user"
 
