@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -83,26 +82,6 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *ProductHandler) GetImage(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid id", 400)
-		return
-	}
-
-	file, contentType, err := h.Service.GetImageReader(r.Context(), id)
-	if err != nil {
-		http.Error(w, "not found", 404)
-		return
-	}
-	defer file.Close()
-
-	w.Header().Set("Content-Type", contentType)
-	io.Copy(w, file)
-}
-
 func (h *ProductHandler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 
@@ -125,45 +104,6 @@ func (h *ProductHandler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "patched",
-	})
-}
-
-func (h *ProductHandler) PatchImage(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-	
-	idStr := chi.URLParam(r, "id")
-
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid id", 400)
-		return
-	}
-	
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, err.Error(), 400)
-		return
-	}
-
-	file, header, err := r.FormFile("image")
-	if err != nil {
-		http.Error(w, "image required", 400)
-		return
-	}
-	defer file.Close()
-
-	path, err := h.Service.UpdateImage(
-		r.Context(),
-		id,
-		file,
-		header,
-	)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]string{
-		"image_path": path,
 	})
 }
 

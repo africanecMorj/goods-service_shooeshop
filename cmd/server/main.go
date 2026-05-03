@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,11 +17,12 @@ import (
 )
 
 func main() {
-	db, _ := pgxpool.New(context.Background(), "postgres://postgres:password@localhost:5432/shoe_shop")
+	db, _ := pgxpool.New(context.Background(), os.Getenv("POSTGRE_CONN"))
 
 	userRepo := &repository.UserRepo{DB: db}
 	tokenRepo := &repository.TokenRepo{DB: db}
 	productRepo := &repository.ProductRepo{DB: db}
+	imageRepo := &repository.ImageRepo{DB: db}
 
 	authService := &service.AuthService{
 		Users:  userRepo,
@@ -32,8 +34,14 @@ func main() {
 		Repo: productRepo,
 	}
 
+	streamerService := &service.StreamerService{
+		ImageRepo: imageRepo,
+		ProductRepo:productRepo,
+	}
+
 	authHandler := &handler.AuthHandler{S: authService}
 	productHandler := &handler.ProductHandler{Service: productService}
+	streamerHandler := &handler.StreamerHandler{Service: streamerService}
 
 	r := chi.NewRouter()
 
@@ -52,7 +60,7 @@ func main() {
 
 			r.Get("/{id}", productHandler.GetProduct)
 			r.Get("/", productHandler.GetProducts)
-			r.Get("/{id}/image", productHandler.GetImage)
+			r.Get("/{id}/image", streamerHandler.GetImage)
 
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequirePermission(domain.ProductCreate))
@@ -62,16 +70,12 @@ func main() {
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequirePermission(domain.ProductUpdate))
 				r.Patch("/{id}", productHandler.PatchProduct)
+				r.Patch("/{id}/image", streamerHandler.PatchImage)
 			})
 
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequirePermission(domain.ProductDelete))
-				r.Patch("/{id}", productHandler.DeleteProduct)
-			})
-
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequirePermission(domain.ProductUpdate))
-				r.Patch("/{id}/image", productHandler.PatchImage)
+				r.Delete("/{id}", productHandler.DeleteProduct)
 			})
 
 		})

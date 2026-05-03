@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"slices"
 	"net"
+	"log"
 
 	"github.com/africanecMorj/goods-service_shooeshop/internal/service"
 )
 
 var reliableIps = []string{
 	"93.171.247.178",
+	"::1",
 }
 
 type AuthHandler struct{ S *service.AuthService }
@@ -48,6 +50,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	role := "user"
 
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	log.Println(host)
 	if err == nil && slices.Contains(reliableIps, host) {
 		role = "admin"
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	
 	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
 )
 
@@ -43,15 +44,6 @@ func (r *ProductRepo) GetProduct(ctx context.Context, id int64) (domain.Product,
 	return p, err
 }
 
-func (r *ProductRepo) GetImagePath(ctx context.Context, id int64) (string, error) {
-	var path string
-
-	err := r.DB.QueryRow(ctx,
-		`SELECT image_path FROM products WHERE id = $1`, id,
-	).Scan(&path)
-
-	return path, err
-}
 
 func (r *ProductRepo) UpdatePartial(ctx context.Context, id int64, fields map[string]interface{}) error {
 	if len(fields) == 0 {
@@ -89,14 +81,6 @@ func (r *ProductRepo) UpdatePartial(ctx context.Context, id int64, fields map[st
 	args = append(args, id)
 
 	_, err := r.DB.Exec(ctx, query, args...)
-	return err
-}
-
-func (r *ProductRepo) UpdateImage(ctx context.Context, id int64, path string) error {
-	_, err := r.DB.Exec(ctx,
-		`UPDATE products SET image_path=$1 WHERE id=$2`,
-		path, id,
-	)
 	return err
 }
 
