@@ -21,7 +21,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Email, Password string }
 
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Email already in use", http.StatusBadRequest)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Email, Password string }
 	if err:=json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Bad request", http.StatusBadRequest)
 	}
 	
 	role := "user"
