@@ -18,6 +18,7 @@ import (
 
 func main() {
 	db, _ := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	log.Println(os.Getenv("DATABASE_URL"))
 
 	userRepo := &repository.UserRepo{DB: db}
 	tokenRepo := &repository.TokenRepo{DB: db}
