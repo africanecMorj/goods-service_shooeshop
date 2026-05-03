@@ -17,8 +17,25 @@ import (
 )
 
 func main() {
-	db, _ := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
-	log.Println(os.Getenv("DATABASE_URL"))
+	log.Println("START APP")
+
+	dbURL := os.Getenv("DATABASE_URL")
+	log.Println("DATABASE_URL =", dbURL)
+
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL is empty")
+	}
+
+	db, err := pgxpool.New(context.Background(), dbURL)
+	if err != nil {
+		log.Fatal("DB init error:", err)
+	}
+
+	if err := db.Ping(context.Background()); err != nil {
+		log.Fatal("DB ping error:", err)
+	}
+
+	log.Println("DB connected ✅")
 
 	userRepo := &repository.UserRepo{DB: db}
 	tokenRepo := &repository.TokenRepo{DB: db}
@@ -36,8 +53,8 @@ func main() {
 	}
 
 	streamerService := &service.StreamerService{
-		ImageRepo: imageRepo,
-		ProductRepo:productRepo,
+		ImageRepo:   imageRepo,
+		ProductRepo: productRepo,
 	}
 
 	authHandler := &handler.AuthHandler{S: authService}
@@ -46,14 +63,12 @@ func main() {
 
 	r := chi.NewRouter()
 
-	// Public routes
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
 	})
 
-	// Protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth([]byte("secret")))
 
@@ -78,10 +93,14 @@ func main() {
 				r.Use(middleware.RequirePermission(domain.ProductDelete))
 				r.Delete("/{id}", productHandler.DeleteProduct)
 			})
-
 		})
 	})
 
-	log.Println("started :8080")
-	http.ListenAndServe(":8080", r)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("started :" + port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
