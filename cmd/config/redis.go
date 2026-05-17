@@ -10,13 +10,12 @@ import (
 
 func RedisInit () *redis.Client{
 	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
-		if err != nil {
-			panic(err)
-		}
+	log.Println(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Fatal("Redis init error:"err)
+	}
 
 	client := redis.NewClient(opt)
-		
-	log.Println(err)
 	if err != nil {
 		log.Fatal("Redis init error:", err)
 	}

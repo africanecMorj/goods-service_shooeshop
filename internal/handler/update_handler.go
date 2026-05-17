@@ -102,4 +102,3 @@ func (h *UpdateHandler) PatchUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-//"https://goods-serviceshooeshop-production.up.railway.app/v1/reset?token="+token+"&code="+code

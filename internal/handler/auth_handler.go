@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"fmt"
 
 	"github.com/africanecMorj/goods-service_shooeshop/internal/service"
 )
@@ -89,7 +88,6 @@ func (h *AuthHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * limit
 
 	users, total, err := h.S.GetUsers(r.Context(), limit, offset)
-	fmt.Println(err)
 	if err != nil {
 		http.Error(w, "failed to fetch users", http.StatusInternalServerError)
 		return
@@ -114,3 +112,4 @@ func (h *AuthHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
+

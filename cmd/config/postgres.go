@@ -10,7 +10,6 @@ import (
 
 func PostgresInit () *pgxpool.Pool{
 	db, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
-	log.Println(err)
 	if err != nil {
 		log.Fatal("Postgres init error:", err)
 	}
