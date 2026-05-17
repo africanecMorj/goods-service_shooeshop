@@ -1,48 +1,21 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 
 	"github.com/africanecMorj/goods-service_shooeshop/internal/handler"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/repository"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/router"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/service"
+	"github.com/africanecMorj/goods-service_shooeshop/cmd/config"
 )
 
 func main() {
 	// --- DB 
-	dbURL := os.Getenv("DATABASE_URL")
-	dbURL = "postgres://postgres:password@localhost:5432/shoe_shop"
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", 
-		DB:       0,  
-		Protocol: 2,
-	})
-
-	// if dbURL == "" {
-	// 	log.Fatal("Empty db_url")
-	// }
-
-	db, err := pgxpool.New(context.Background(), dbURL)
-	log.Println(err)
-	// if err != nil {
-	// 	log.Fatal("DB init error:", err)
-	// }
-
-	// if err := db.Ping(context.Background()); err != nil {
-	// 	log.Fatal("DB ping error:", err)
-	// }
-
-	// log.Println("DB connected")
-
+	rdb := config.RedisInit()
+	db := config.PostgresInit()
 
 	// -------- REPOSITORIES --------
 	userRepo := &repository.UserRepo{DB: db}

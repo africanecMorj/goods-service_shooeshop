@@ -58,7 +58,7 @@ func New(h Handlers) http.Handler {
 				// ----- UPDATE -----
 				r.Group(func(r chi.Router) {
 					r.Use(middleware.RequirePermission(domain.UserUpdate))
-					r.PATCH("/{id}", h.Updater.PatchUser)
+					r.Patch("/{id}", h.Updater.PatchUser)
 				})
 
 			})
