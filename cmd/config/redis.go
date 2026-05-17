@@ -9,7 +9,7 @@ import (
 )
 
 func RedisInit () *redis.Client{
-	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	opt, err := redis.ParseURL("redis://default:kQeqoLlvJQCVcwuQmQeOzGaIIhxDlKul@redis.railway.internal:6379")
 	log.Println(os.Getenv("REDIS_URL"))
 	if err != nil {
 		log.Fatal("Redis init error:",err)
