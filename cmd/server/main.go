@@ -28,7 +28,7 @@ func main() {
 	authService := &service.AuthService{
 		Users:  userRepo,
 		Tokens: tokenRepo,
-		Secret: []byte("secret"),
+		Secret: os.GetEnv("JWT-SECRET"),
 	}
 
 	productService := &service.ProductService{
