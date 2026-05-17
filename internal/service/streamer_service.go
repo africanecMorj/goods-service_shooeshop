@@ -8,12 +8,14 @@ import (
 	"net/http"
 
 	"github.com/africanecMorj/goods-service_shooeshop/internal/repository"
+	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/service/utils"
 )
 
 type StreamerService struct {
 	ImageRepo *repository.ImageRepo
 	ProductRepo *repository.ProductRepo
+	DB domain.TxBeginner
 }
 
 type ImageStream struct {
@@ -28,7 +30,17 @@ func (s *StreamerService) UpdateImage(
 	header *multipart.FileHeader,
 ) (string, error) {
 
-	product, err := s.ProductRepo.GetProduct(ctx, id)
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	defer tx.Rollback(ctx)
+
+	txP := s.ProductRepo.PWithTx(tx)
+	txI := s.ImageRepo.IWithTx(tx)
+
+	product, err := txP.GetProduct(ctx, id)
 	if err != nil {
 		return "", err
 	}
@@ -38,12 +50,25 @@ func (s *StreamerService) UpdateImage(
 		return "", err
 	}
 
-	if err := s.ImageRepo.UpdateImage(ctx, id, newPath); err != nil {
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(newPath)
+		}
+	}()
+
+	if err = txI.UpdateImage(ctx, id, newPath); err != nil {
 		return "", err
 	}
 
+	if err = tx.Commit(ctx); err != nil {
+		return "", err
+	}
+
+	cleanup = false
+
 	if product.ImagePath != "" {
-		_ = os.Remove(product.ImagePath) 
+		_ = os.Remove(product.ImagePath)
 	}
 
 	return newPath, nil

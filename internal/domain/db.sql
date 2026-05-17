@@ -2,6 +2,7 @@ CREATE TABLE users (
 	id SERIAL PRIMARY KEY,
 	email TEXT UNIQUE,
 	password TEXT
+	role TEXT
 );
 
 CREATE TABLE refresh_tokens (

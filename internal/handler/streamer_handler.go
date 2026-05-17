@@ -39,7 +39,7 @@ func (h *StreamerHandler) PatchImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	path, err := h.Service.UpdateImage(
+	_, err = h.Service.UpdateImage(
 		r.Context(),
 		id,
 		file,
@@ -51,7 +51,7 @@ func (h *StreamerHandler) PatchImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{
-		"image_path": path,
+		"image_url":"/products/" + strconv.FormatInt(id, 10) +"/image",
 	})
 }
 

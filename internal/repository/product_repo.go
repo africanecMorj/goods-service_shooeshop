@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 	
 	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
+
 )
 
 type ProductRepo struct {
-	DB *pgxpool.Pool
+	DB domain.DBTX
 }
 
-func (r *ProductRepo) CreateProduct(ctx context.Context, p domain.Product) (int64, error) {
+func (r *ProductRepo) CreateProduct(ctx context.Context, p domain.Product ) (int64, error) {
 	var id int64
 
 	err := r.DB.QueryRow(ctx, `
@@ -30,7 +31,7 @@ func (r *ProductRepo) GetProduct(ctx context.Context, id int64) (domain.Product,
 	var p domain.Product
 
 	err := r.DB.QueryRow(ctx, `
-		SELECT id, name, description, price, image_path
+		SELECT id, name, description, price, image_path, created_at
 		FROM products
 		WHERE id = $1
 	`, id).Scan(
@@ -39,6 +40,7 @@ func (r *ProductRepo) GetProduct(ctx context.Context, id int64) (domain.Product,
 		&p.Description,
 		&p.Price,
 		&p.ImagePath,
+		&p.CreatedAt,
 	)
 
 	return p, err
@@ -84,19 +86,37 @@ func (r *ProductRepo) UpdatePartial(ctx context.Context, id int64, fields map[st
 	return err
 }
 
-func (r *ProductRepo) GetProducts(ctx context.Context, limit, offset int) ([]domain.Product, int, error) {
-	var products []domain.Product
-	var total int
+func (r *ProductRepo) GetProducts(
+	ctx context.Context,
+	limit, offset int,
+) ([]domain.Product, int, error) {
 
-	err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM products").Scan(&total)
+	var (
+		products []domain.Product
+		total    int
+	)
+
+	// Total count
+	err := r.DB.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM products
+	`).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := r.DB.Query(ctx,
-		"SELECT id, name, description, price FROM products LIMIT $1 OFFSET $2",
-		limit, offset,
-	)
+	// Paginated query
+	rows, err := r.DB.Query(ctx, `
+		SELECT
+			id,
+			name,
+			description,
+			price,
+			created_at
+		FROM products
+		ORDER BY id
+		LIMIT $1 OFFSET $2
+	`, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -104,22 +124,43 @@ func (r *ProductRepo) GetProducts(ctx context.Context, limit, offset int) ([]dom
 
 	for rows.Next() {
 		var p domain.Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price); err != nil {
+
+		if err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Description,
+			&p.Price,
+			&p.CreatedAt,
+		); err != nil {
 			return nil, 0, err
 		}
+
 		products = append(products, p)
+	}
+
+	// Check iteration errors
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 
 	return products, total, nil
 }
 
-func (r *ProductRepo) DeleteProduct(ctx context.Context, id int64) error {
-	result, err := r.DB.Exec(ctx, "DELETE FROM products WHERE id = $1", id)
+func (r *ProductRepo) DeleteProduct(ctx context.Context, id int64) (string, error) {
+	var imagePath string
 
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return err
+	err := r.DB.QueryRow(ctx,
+		"DELETE FROM products WHERE id = $1 RETURNING image_path",
+		id,
+	).Scan(&imagePath)
+
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	return imagePath, nil
+}
+
+func (r *ProductRepo) PWithTx(tx pgx.Tx) *ProductRepo {
+	return &ProductRepo{DB: tx}
 }

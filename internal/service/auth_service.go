@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/africanecMorj/goods-service_shooeshop/internal/repository"
+	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
 	"github.com/africanecMorj/goods-service_shooeshop/pkg/hash"
 	"github.com/africanecMorj/goods-service_shooeshop/pkg/jwtpkg"
 )
@@ -17,12 +18,15 @@ type AuthService struct {
 	Secret []byte
 }
 
-func (s *AuthService) Register(ctx context.Context, email, password string) error {
-	h, _ := hash.Hash(password)
-	return s.Users.Create(ctx, email, h)
+func (s *AuthService) Register(ctx context.Context, email, password, role string) error {
+	h, err := hash.Hash(password)
+	if err != nil {
+		return err
+	}
+	return s.Users.Create(ctx, email, h, role)
 }
 
-func (s *AuthService) Login(ctx context.Context, email, password string, role string) (string, string, error) {
+func (s *AuthService) Login(ctx context.Context, email, password string) (string, string, error) {
 	u, err := s.Users.GetByEmail(ctx, email)
 	if err != nil {
 		return "", "", err
@@ -32,7 +36,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string, role st
 		return "", "", err
 	}
 
-	access, err := jwtpkg.GenerateAccess(s.Secret, u.ID, role)
+	access, err := jwtpkg.GenerateAccess(s.Secret, u.ID, u.Role)
 	if err != nil {
 		return "", "", err
 	}
@@ -52,13 +56,13 @@ func (s *AuthService) Login(ctx context.Context, email, password string, role st
 	return access, refresh, nil
 }
 
-func (s *AuthService) Refresh(ctx context.Context, oldToken string, role string) (string, string, error) {
+func (s *AuthService) Refresh(ctx context.Context, oldToken string) (string, string, error) {
 	meta, err := s.Tokens.RefreshMeta(ctx, oldToken)
 	if err != nil {
 		return "", "", err
 	}
 
-	access, err := jwtpkg.GenerateAccess(s.Secret, meta.UserID, role)
+	access, err := jwtpkg.GenerateAccess(s.Secret, meta.UserID, meta.Role)
 	if err != nil {
 		return "", "", err
 	}
@@ -84,4 +88,8 @@ func (s *AuthService) newRefresh() (string, error) {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return hex.EncodeToString(b), nil
+}
+
+func (s *AuthService) GetUsers(ctx context.Context, limit, offset int) ([]domain.User, int, error) {
+	return s.Users.GetUsers(ctx, limit, offset)
 }

@@ -4,10 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
+
 )
 
-type TokenRepo struct{ DB *pgxpool.Pool }
+type TokenRepo struct{ 
+	DB domain.DBTX
+ }
 
 func (r *TokenRepo) Save(ctx context.Context, userID int, token string, exp time.Time) error {
 	_, err := r.DB.Exec(ctx,
@@ -47,6 +50,7 @@ type RefreshResult struct {
 	UserID  int
 	Exp     time.Time
 	Rotated bool
+	Role string
 }
 
 func (r *TokenRepo) RefreshMeta(ctx context.Context, token string) (RefreshResult, error) {
@@ -64,12 +68,14 @@ func (r *TokenRepo) RefreshMeta(ctx context.Context, token string) (RefreshResul
 			RETURNING user_id
 		)
 		SELECT
-			COALESCE(sel.user_id, del.user_id),
-			sel.expires_at,
-			(del.user_id IS NOT NULL)
-		FROM sel
-		FULL OUTER JOIN del ON true
-	`, token).Scan(&res.UserID, &res.Exp, &res.Rotated)
+			s.user_id,
+			s.expires_at,
+			(d.user_id IS NOT NULL) AS expired,
+			u.role
+		FROM sel s
+		LEFT JOIN del d ON true
+		JOIN users u ON u.id = s.user_id;
+	`, token).Scan(&res.UserID, &res.Exp, &res.Rotated,&res.Role)
 
 	return res, err
 }

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"mime/multipart"
 	"bytes"
+	"strconv"
+	"math/rand/v2"
 
 	"github.com/google/uuid"
 
@@ -59,3 +61,7 @@ func SaveFile(file multipart.File, header *multipart.FileHeader) (string, error)
 	return path, nil
 }
 
+func GenerateCode() string {
+    n := rand.IntN(90000) + 10000 
+    return strconv.Itoa(n)
+}

@@ -7,6 +7,9 @@ const (
 	ProductCreate Permission = "product:create"
 	ProductDelete Permission = "product:delete"
 	ProductUpdate Permission = "product:update"
+	UserRead 	  Permission = "user:read"
+	UserUpdate 	  Permission = "user:update"
+	UserDelete    Permission = "user:delete" 
 )
 
 var RolePermissions = map[string][]Permission{
@@ -18,5 +21,14 @@ var RolePermissions = map[string][]Permission{
 		ProductCreate,
 		ProductDelete,
 		ProductUpdate,
+	},
+	"super-admin": {
+		ProductRead,
+		ProductCreate,
+		ProductDelete,
+		ProductUpdate,
+		UserRead,
+		UserUpdate,
+		UserDelete,
 	},
 }

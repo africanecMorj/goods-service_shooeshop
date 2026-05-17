@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+	
+	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 type ImageRepo struct {
-	DB *pgxpool.Pool
+	DB domain.DBTX
 }
 
 func (r *ImageRepo) GetImagePath(ctx context.Context, id int64) (string, error) {
@@ -26,4 +28,8 @@ func (r *ImageRepo) UpdateImage(ctx context.Context, id int64, path string) erro
 		path, id,
 	)
 	return err
+}
+
+func (r *ImageRepo) IWithTx(tx pgx.Tx) *ImageRepo {
+	return &ImageRepo{DB: tx}
 }

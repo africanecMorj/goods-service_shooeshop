@@ -6,42 +6,52 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
-	"github.com/africanecMorj/goods-service_shooeshop/internal/domain"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/handler"
-	"github.com/africanecMorj/goods-service_shooeshop/internal/middleware"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/repository"
+	"github.com/africanecMorj/goods-service_shooeshop/internal/router"
 	"github.com/africanecMorj/goods-service_shooeshop/internal/service"
 )
 
 func main() {
-	log.Println("START APP")
-
+	// --- DB 
 	dbURL := os.Getenv("DATABASE_URL")
-	log.Println("DATABASE_URL =", dbURL)
+	dbURL = "postgres://postgres:password@localhost:5432/shoe_shop"
 
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL is empty")
-	}
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", 
+		DB:       0,  
+		Protocol: 2,
+	})
+
+	// if dbURL == "" {
+	// 	log.Fatal("Empty db_url")
+	// }
 
 	db, err := pgxpool.New(context.Background(), dbURL)
-	if err != nil {
-		log.Fatal("DB init error:", err)
-	}
+	log.Println(err)
+	// if err != nil {
+	// 	log.Fatal("DB init error:", err)
+	// }
 
-	if err := db.Ping(context.Background()); err != nil {
-		log.Fatal("DB ping error:", err)
-	}
+	// if err := db.Ping(context.Background()); err != nil {
+	// 	log.Fatal("DB ping error:", err)
+	// }
 
-	log.Println("DB connected")
+	// log.Println("DB connected")
 
+
+	// -------- REPOSITORIES --------
 	userRepo := &repository.UserRepo{DB: db}
 	tokenRepo := &repository.TokenRepo{DB: db}
 	productRepo := &repository.ProductRepo{DB: db}
 	imageRepo := &repository.ImageRepo{DB: db}
+	chacheRepo := &repository.ChacheRepo{RDB: rdb}
 
+	// -------- SERVICES --------
 	authService := &service.AuthService{
 		Users:  userRepo,
 		Tokens: tokenRepo,
@@ -50,50 +60,33 @@ func main() {
 
 	productService := &service.ProductService{
 		Repo: productRepo,
+		DB: db,
 	}
 
 	streamerService := &service.StreamerService{
 		ImageRepo:   imageRepo,
 		ProductRepo: productRepo,
+		DB: db,
 	}
 
+	updateService := &service.UpdateService{
+		UserRepo:   userRepo,
+		ChacheRepo: chacheRepo,
+	}
+
+	// -------- HANDLERS --------
 	authHandler := &handler.AuthHandler{S: authService}
-	productHandler := &handler.ProductHandler{Service: productService}
-	streamerHandler := &handler.StreamerHandler{Service: streamerService}
+	productHandler := &handler.ProductHandler{Service: productService,}
+	streamerHandler := &handler.StreamerHandler{Service: streamerService,}
+	updateHandler := &handler.UpdateHandler{UpdateService: updateService, AuthService: authService}
 
-	r := chi.NewRouter()
-
-	r.Route("/auth", func(r chi.Router) {
-		r.Post("/register", authHandler.Register)
-		r.Post("/login", authHandler.Login)
-		r.Post("/refresh", authHandler.Refresh)
-	})
-
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.Auth([]byte("secret")))
-
-		r.Route("/products", func(r chi.Router) {
-
-			r.Get("/{id}", productHandler.GetProduct)
-			r.Get("/", productHandler.GetProducts)
-			r.Get("/{id}/image", streamerHandler.GetImage)
-
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequirePermission(domain.ProductCreate))
-				r.Post("/", productHandler.CreateProduct)
-			})
-
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequirePermission(domain.ProductUpdate))
-				r.Patch("/{id}", productHandler.PatchProduct)
-				r.Patch("/{id}/image", streamerHandler.PatchImage)
-			})
-
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequirePermission(domain.ProductDelete))
-				r.Delete("/{id}", productHandler.DeleteProduct)
-			})
-		})
+	// -------- ROUTER --------
+	r := router.New(router.Handlers{
+		Auth:     authHandler,
+		Product:  productHandler,
+		Streamer: streamerHandler,
+		Updater: updateHandler,
+		RDB:rdb,
 	})
 
 	port := os.Getenv("PORT")
@@ -101,6 +94,6 @@ func main() {
 		port = "8080"
 	}
 
-	log.Println("started :" + port)
+	log.Println("Server is running on port:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

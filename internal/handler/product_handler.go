@@ -76,7 +76,8 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		"name":        p.Name,
 		"description": p.Description,
 		"price":       p.Price,
-		"image_url":   "/products/image/" + strconv.FormatInt(p.ID, 10),
+		"image_url":   "/products/" + strconv.FormatInt(p.ID, 10) +"/image",
+		"created_at": p.CreatedAt,
 	}
 
 	json.NewEncoder(w).Encode(resp)
@@ -138,7 +139,8 @@ func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 			"name":        p.Name,
 			"description": p.Description,
 			"price":       p.Price,
-			"image_url":   "/products/image/" + strconv.FormatInt(p.ID, 10),
+			"image_url":   "/products/" + strconv.FormatInt(p.ID, 10) +"/image",
+			"created_at": p.CreatedAt,
 		})
 	}
 
