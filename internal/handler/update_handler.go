@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/go-chi/chi/v5"
 
@@ -53,7 +54,6 @@ func (h *UpdateHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Requ
 func (h *UpdateHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
     var req domain.ResetPassword
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fmt.Println(err)
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
@@ -61,7 +61,6 @@ func (h *UpdateHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "code")
 
 	if err := h.UpdateService.ResetPassword(r.Context(), req.Email, code, req.Password); err != nil {
-		fmt.Println(err)
 		if err != fmt.Errorf("Invalid code") {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
         	return
