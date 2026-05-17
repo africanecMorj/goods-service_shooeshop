@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"fmt"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"

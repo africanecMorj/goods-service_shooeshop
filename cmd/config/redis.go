@@ -16,9 +16,6 @@ func RedisInit () *redis.Client{
 	}
 
 	client := redis.NewClient(opt)
-	if err != nil {
-		log.Fatal("Redis init error:", err)
-	}
 
 	if err := client.Ping(context.Background()); err != nil {
 		log.Fatal("Redis ping error:", err)
