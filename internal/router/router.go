@@ -47,7 +47,7 @@ func New(h Handlers) http.Handler {
 		})
 		// -------- PROTECTED --------
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.Auth([]byte(os.GetEnv("JWT-SECRET"))))
+			r.Use(middleware.Auth([]byte(os.Getenv("JWT-SECRET"))))
 
 			r.Route("/admin", func(r chi.Router) {
 				// ----- READ -----
