@@ -170,6 +170,7 @@ func (h *ProductHandler) DeleteProduct (w http.ResponseWriter, r *http.Request) 
 
 	if err := h.Service.DeleteProduct(r.Context(), id); err != nil {
 		http.Error(w, "Invalid id", http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

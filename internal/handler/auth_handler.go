@@ -39,6 +39,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Email, Password string }
 	if err:=json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
 	
 
@@ -56,6 +57,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Token string }
 	if err:=json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "Bad ruquest", http.StatusBadRequest)
+		return
 	}
 
 
